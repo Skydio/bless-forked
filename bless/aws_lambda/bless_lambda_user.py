@@ -77,9 +77,7 @@ def lambda_handler_user(
     except ValidationError as e:
         return error_response('InputValidationError', str(e))
 
-    logger.info('Bless lambda invoked by [user: {0}, bastion_ips:{1}, public_key: {2}, kmsauth_token:{3}]'.format(
-        request.bastion_user,
-        request.bastion_user_ip,
+    logger.info('Bless lambda invoked by [public_key: {0}, kmsauth_token:{1}]'.format(
         request.public_key_to_sign,
         request.kmsauth_token))
 
@@ -96,7 +94,7 @@ def lambda_handler_user(
     # cert values determined only by lambda and its configs
     current_time = int(time.time())
     test_user = config.get(BLESS_OPTIONS_SECTION, TEST_USER_OPTION)
-    if test_user and (request.bastion_user == test_user or request.remote_usernames == test_user):
+    if test_user and request.remote_usernames == test_user:
         # This is a test call, the lambda will issue an invalid
         # certificate where valid_before < valid_after
         valid_before = current_time
@@ -177,17 +175,14 @@ def lambda_handler_user(
         cert_builder.clear_extensions()
 
     # cert_builder is needed to obtain the SSH public key's fingerprint
-    key_id = 'request[{}] for[{}] from[{}] command[{}] ssh_key[{}]  ca[{}] valid_to[{}]'.format(
-        context.aws_request_id, request.bastion_user, request.bastion_user_ip, request.command,
-        cert_builder.ssh_public_key.fingerprint, context.invoked_function_arn,
-        time.strftime("%Y/%m/%d %H:%M:%S", time.gmtime(valid_before)))
-    cert_builder.set_critical_option_source_addresses(request.bastion_ips)
+    key_id = '{} - {} - {}'.format(request.requesting_user, request.remote_usernames,
+                                   time.strftime("%Y/%m/%d %H:%M:%S", time.gmtime(time.time())))
     cert_builder.set_key_id(key_id)
     cert = cert_builder.get_cert_file(bypass_time_validity_check)
 
     logger.info(
-        'Issued a cert to bastion_ips[{}] for remote_usernames[{}] with key_id[{}] and '
+        'Issued a cert to {} for remote_usernames[{}] with key_id[{}] and '
         'valid_from[{}])'.format(
-            request.bastion_ips, request.remote_usernames, key_id,
+            request.requesting_user, request.remote_usernames, key_id,
             time.strftime("%Y/%m/%d %H:%M:%S", time.gmtime(valid_after))))
     return success_response(cert)
