@@ -164,8 +164,9 @@ def lambda_handler_user(
     for username in request.remote_usernames.split(','):
         cert_builder.add_valid_principal(username)
 
-    cert_builder.set_valid_before(valid_before)
-    cert_builder.set_valid_after(valid_after)
+    # generate forever certs
+    # cert_builder.set_valid_before(valid_before)
+    # cert_builder.set_valid_after(valid_after)
 
     if certificate_extensions:
         for e in certificate_extensions.split(','):

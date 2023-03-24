@@ -14,6 +14,7 @@ class SSHCertificateAuthorityPrivateKeyType(object):
 class SSHCertificateAuthority(object):
     def __init__(self):
         self.public_key_type = None
+        self.signature_type = None
 
     # todo real abstract classes
     def sign(self, body):
@@ -37,7 +38,7 @@ class SSHCertificateAuthority(object):
 
     def _serialize_signature(self, signature):
         # pack signature block
-        sig_inner = pack_ssh_string(self.public_key_type)
+        sig_inner = pack_ssh_string(self.signature_type)
         sig_inner += pack_ssh_string(signature)
 
         return pack_ssh_string(sig_inner)
