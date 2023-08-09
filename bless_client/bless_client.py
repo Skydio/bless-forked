@@ -4,25 +4,17 @@
 A sample client to invoke the BLESS Lambda function and save the signed SSH Certificate.
 
 Usage:
-  bless_client.py region lambda_function_name bastion_user bastion_user_ip remote_usernames
-  bastion_ips bastion_command <id_rsa.pub to sign> <output id_rsa-cert.pub>
+  bless_client.py region lambda_function_name requesting_user remote_usernames
+  <id_rsa.pub to sign> <output id_rsa-cert.pub>
 
     region: AWS region where your lambda is deployed.
 
     lambda_function_name: The AWS Lambda function's alias or ARN to invoke.
 
-    bastion_user: The user on the bastion, who is initiating the SSH request.
-
-    bastion_user_ip: The IP of the user accessing the bastion.
+    requesting_user: The user requesting the certificate.
 
     remote_usernames: Comma-separated list of username(s) or authorized principals on the remote
     server that will be used in the SSH request.  This is enforced in the issued certificate.
-
-    bastion_ips: The source IP(s) where the SSH connection will be initiated from.
-    Addresses should be comma-separated and can be individual IPs or CIDR format (nn.nn.nn.nn/nn
-    or hhhh::hhhh/nn).  This is enforced in the issued certificate.
-
-    bastion_command: Text information about the SSH request of the bastion_user.
 
     id_rsa.pub to sign: The id_rsa.pub that will be used in the SSH request.  This is
     enforced in the issued certificate.
@@ -42,20 +34,19 @@ import boto3
 def main(argv):
     if len(argv) < 9 or len(argv) > 10:
         print(
-            'Usage: bless_client.py region lambda_function_name bastion_user bastion_user_ip '
-            'remote_usernames bastion_ips bastion_command <id_rsa.pub to sign> '
+            'Usage: bless_client.py region lambda_function_name requesting_user '
+            'remote_usernames <id_rsa.pub to sign> '
             '<output id_rsa-cert.pub> [kmsauth token]')
         return -1
 
-    region, lambda_function_name, bastion_user, bastion_user_ip, remote_usernames, bastion_ips, \
-        bastion_command, public_key_filename, certificate_filename = argv[:9]
+    region, lambda_function_name, requesting_user, remote_usernames, \
+        public_key_filename, certificate_filename = argv[:6]
 
     with open(public_key_filename, 'r') as f:
         public_key = f.read().strip()
 
-    payload = {'bastion_user': bastion_user, 'bastion_user_ip': bastion_user_ip,
-               'remote_usernames': remote_usernames, 'bastion_ips': bastion_ips,
-               'command': bastion_command, 'public_key_to_sign': public_key}
+    payload = {'requesting_user': requesting_user, 'remote_usernames': remote_usernames, 
+               'public_key_to_sign': public_key}
 
     if len(argv) == 10:
         payload['kmsauth_token'] = argv[9]
