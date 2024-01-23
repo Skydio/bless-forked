@@ -161,7 +161,12 @@ def lambda_handler_user(
     ca = get_ssh_certificate_authority(ca_private_key, ca_private_key_password)
     cert_builder = get_ssh_certificate_builder(ca, SSHCertificateType.USER,
                                                request.public_key_to_sign)
-    for username in request.remote_usernames.split(','):
+
+    usernames = request.remote_usernames.split(',')
+    # openssh upstream hardcodes a maximum of 256 principals for any certificate.
+    if len(usernames) > 256:
+        return error_response('InputValidationError', 'Too many remote_usernames; max 256 allowed.')
+    for username in usernames:
         cert_builder.add_valid_principal(username)
 
     # generate forever certs
