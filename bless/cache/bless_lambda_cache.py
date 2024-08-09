@@ -31,7 +31,7 @@ class BlessLambdaCache:
         else:
             self.region = 'us-west-2'
 
-            # Load the deployment config values
+        # Load the deployment config values
         self.config = BlessConfig(self.region, config_file=config_file)
 
         password_ciphertext_b64 = self.config.getpassword()
@@ -42,7 +42,7 @@ class BlessLambdaCache:
             try:
                 ca_password = kms_client.decrypt(
                     CiphertextBlob=base64.b64decode(password_ciphertext_b64))
-                self.ca_private_key_password = ca_password['Plaintext']
+                self.ca_private_key_password = base64.b64encode(ca_password['Plaintext'])
             except ClientError as e:
                 self.ca_private_key_password_error = str(e)
         else:
